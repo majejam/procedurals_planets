@@ -1,17 +1,8 @@
 import './css/style.styl'
-import grassTextureSource from './img/texture/house/grass.jpg' 
-
+import CameraControls from 'camera-controls';
 import * as THREE from 'three'
 
-/**
- * Textures
- */
-const textureLoader = new THREE.TextureLoader()
-const grassTexture = textureLoader.load(grassTextureSource)
-grassTexture.wrapS = THREE.RepeatWrapping
-grassTexture.wrapT = THREE.RepeatWrapping
-grassTexture.repeat.x = 4
-grassTexture.repeat.y = 4
+CameraControls.install( { THREE: THREE } );
 
 /**
  * Scene
@@ -41,75 +32,112 @@ window.addEventListener('mousemove', (_event) =>
 /**
  * Camera
  */
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
-camera.position.z = 3
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 1, 8000)
+camera.position.z = 30
 scene.add(camera)
 
+
 /**
- * House
+ * Universe
  */
-const house = new THREE.Object3D()
-//scene.add(house)
-
-// Wall
-const wall = new THREE.Mesh(
-    new THREE.BoxGeometry(1.5, 1, 1.5),
-    new THREE.MeshStandardMaterial({ color: 0xffcc99, metalness: 0.3, roughness: 0.8 })
-)
-wall.castShadow = true
-wall.receiveShadow = true
-house.add(wall)
-
-// Floor
-const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(4, 4),
-    new THREE.MeshStandardMaterial({ color: 0x66bb66, metalness: 0.3, roughness: 0.8, map: grassTexture })
-)
-floor.rotation.x = - Math.PI * 0.5
-floor.position.y = - 0.5
-floor.receiveShadow = true
-house.add(floor)
-
-// Roof
-const roof = new THREE.Mesh(
-    new THREE.ConeGeometry(1.25, 0.5, 4),
-    new THREE.MeshStandardMaterial({ color: 0x885522, metalness: 0.3, roughness: 0.8 })
-)
-roof.position.y = 0.5 + 0.25
-roof.rotation.y = Math.PI * 0.25
-roof.castShadow = true
-house.add(roof)
-
-// Bushes
-for(let i = 0; i < 300; i++)
-{
-    const radius = Math.random() * 0.2
-
-    const bush = new THREE.Mesh(
-        new THREE.SphereGeometry(radius),
-        new THREE.MeshStandardMaterial({ color: 0x228833, metalness: 0.3, roughness: 0.8 })
+let galaxyArray = new Array()
+const universe = new THREE.Object3D()
+const ul = 5000
+const nb_of_clusters = 20
+// Stars 
+for(let i = 0; i < nb_of_clusters; i++){
+    let cluster_color = parseInt('0x' + (Math.random().toString(16) + "000000").substring(2,8))
+    const points = {
+        cx : -ul/2 + Math.random() * ul,
+        cy : -ul/2 + Math.random() * ul,
+        cz : -ul/2 + Math.random() * ul
+    }
+    const galaxyPoint = new THREE.Mesh(
+            new THREE.SphereBufferGeometry(20),
+            new THREE.MeshStandardMaterial({ color: cluster_color, metalness: 0.3, roughness: 0.8 })
     )
-    bush.position.set((Math.random() - 0.5) * 4,- 0.5 + radius * 0.5,(Math.random() - 0.5) * 4)
-    //bush.position.x = (Math.random() - 0.5) * 4
-    //bush.position.z = (Math.random() - 0.5) * 4
-    //bush.position.y = - 0.5 + radius * 0.5
-    bush.castShadow = true
-	bush.receiveShadow = true
-    house.add(bush)
+    galaxyPoint.position.set(points.cx, points.cy, points.cz)
+    //universe.add(galaxyPoint)
+    galaxyArray.push(points)
+    let gvx,gvy,gvz
+    const sr = 0.2 + Math.random() * 0.4
+    const cluster_size = 100
+    //linear cluster generation
+    for(let j = 0; j < 200; j++)
+    {
+        if(true){
+            gvx = Math.random() * 1.2
+            gvy = Math.random() * 1.2
+            gvz = Math.random() * 1
+        }
+        const tx = galaxyArray[i].cx + ((-(cluster_size * gvx)/2) + Math.random() * (cluster_size * gvx))
+        const ty = galaxyArray[i].cy + ((-(cluster_size * gvy)/2) + Math.random() * (cluster_size * gvy))/2
+        const tz = galaxyArray[i].cz + ((-(cluster_size * gvz)/2) + Math.random() * (cluster_size * gvz))
+        //const starLight = new THREE.PointLight(0xFF69B4)
+        const star = new THREE.Mesh(
+            new THREE.SphereBufferGeometry(sr),
+            new THREE.MeshStandardMaterial({ color: cluster_color, metalness: 0.3, roughness: 0.8 })
+    )
+
+    // Set position
+    //starLight.position.set(tx, ty, tz)
+    star.position.set(tx, ty, tz)
+
+    // Shadows
+    //star.castShadow = true
+    //star.receiveShadow = true
+
+    // Add Elements
+    //universe.add(starLight)
+    universe.add(star)
+    }
 }
-scene.add(house)
+
+scene.add(universe)
+/** 
+*smoke effect
+**/
+
+let geometryS = new THREE.CubeGeometry( 200, 200, 200 );
+let materialS = new THREE.MeshLambertMaterial( { color: 0xaa6666, wireframe: false } );
+let mesh = new THREE.Mesh( geometryS, materialS );
+//scene.add( mesh );
+let cubeSineDriver = 0;
+
+
+THREE.ImageUtils.crossOrigin = ''; //Need this to pull in crossdomain images from AWS
+
+
+let smokeTexture = THREE.ImageUtils.loadTexture('https://s3-us-west-2.amazonaws.com/s.cdpn.io/95637/Smoke-Element.png');
+let smokeMaterial = new THREE.MeshLambertMaterial({color: 0x00dddd, map: smokeTexture, transparent: true});
+let smokeGeo = new THREE.PlaneGeometry(300,300);
+let smokeParticles = [];
+
+
+for (let p = 0; p < 150; p++) {
+    var particle = new THREE.Mesh(smokeGeo,smokeMaterial);
+    particle.position.set(Math.random()*500-250,Math.random()*500-250,Math.random()*1000-100);
+    particle.rotation.z = Math.random() * 360;
+    scene.add(particle);
+    smokeParticles.push(particle);
+}
+ 
+ 
+function evolveSmoke() {
+    var sp = smokeParticles.length;
+    while(sp--) {
+        smokeParticles[sp].rotation.z += (0.002);
+    }
+}
 /**
 * Lights
 **/
-const doorLight = new THREE.PointLight(0xFF69B4)
-doorLight.position.x = - 1.02
-doorLight.castShadow = true
-house.add(doorLight)
+
 
 const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.3)
 scene.add(ambientLight)
 
-const sunLight = new THREE.DirectionalLight(0xFFFFFF, 0.6)
+const sunLight = new THREE.DirectionalLight(0xFFFFFF, 1)
 sunLight.position.x = 1
 sunLight.position.y = 1
 sunLight.position.z = 1
@@ -119,7 +147,66 @@ sunLight.shadow.camera.right = 1.20
 sunLight.shadow.camera.bottom = -1.20
 sunLight.shadow.camera.left = -1.20
 scene.add(sunLight)
+/**
+*Sky box 
+**/
+  
+/*
+let uniforms = {  
+  texture: { type: 't', value: textureLoader.load(skyboxTexture) }
+};
 
+let material = new THREE.ShaderMaterial( {  
+    uniforms: uniforms,
+    vertexShader:
+    `
+        varying vec2 vUV;
+
+        void main() {  
+          vUV = uv;
+          vec4 pos = vec4(position, 1.0);
+          gl_Position = projectionMatrix * modelViewMatrix * pos;
+        }
+    `,
+    fragmentShader:
+    `
+        uniform sampler2D texture;  
+        varying vec2 vUV;
+
+        void main() {  
+          vec4 sample = texture2D(texture, vUV);
+          gl_FragColor = vec4(sample.xyz, sample.w);
+        }
+    `
+});
+*/
+
+/*
+
+Do clusters of stars (select a point, build around it), complexité log(n). 
+
+*/
+import skyboxTexture from './img/texture/skybox/skybox.png' 
+const textureLoader = new THREE.TextureLoader()
+let geometry = new THREE.BoxGeometry(1, 1, 1, 32, 32, 32);
+for (var i in geometry.vertices) {
+    var vertex = geometry.vertices[i];
+    vertex.normalize().multiplyScalar(4000);
+}
+let materialArray = [];
+for (var i = 0; i < 6; i++) {
+  var faceMaterial = new THREE.MeshPhongMaterial();
+  faceMaterial.map = textureLoader.load(skyboxTexture); // see github for implementation
+  materialArray.push(faceMaterial);
+}
+ 
+var sphereMaterial = new THREE.MeshFaceMaterial(materialArray);
+let material = new THREE.MeshBasicMaterial({map: textureLoader.load(skyboxTexture), side: THREE.BackSide})
+const skyBox = new THREE.Mesh(geometry, material) 
+skyBox.scale.set(-1, 1, 1)
+skyBox.eulerOrder = 'XZY'  
+skyBox.renderDepth = 1000.0  
+scene.add(skyBox);  
 
 /**
  * Renderer
@@ -129,6 +216,27 @@ renderer.shadowMap.enabled = true
 renderer.setSize(sizes.width, sizes.height)
 document.body.appendChild(renderer.domElement)
 
+/**
+* Controller
+**/
+const clock = new THREE.Clock()
+const cameraControls = new CameraControls( camera, renderer.domElement )
+cameraControls.maxDistance = 0
+cameraControls.maxDistance = 2000
+cameraControls.truckSpeed = 0
+
+
+let nb_gala = 0
+window.addEventListener('contextmenu', () =>
+{
+    if(nb_gala == nb_of_clusters - 1){
+        nb_gala = 0
+    } 
+    nb_gala++
+    //cameraControls.setPosition( galaxyArray[rand].cx,galaxyArray[rand].cy,galaxyArray[rand].cz, true)
+    cameraControls.setTarget(galaxyArray[nb_gala].cx,galaxyArray[nb_gala].cy,galaxyArray[nb_gala].cz, true)
+    cameraControls.dollyTo( 50, true )
+})
 /**
  * Resize
  */
@@ -152,27 +260,13 @@ window.addEventListener('resize', () =>
 const loop = () =>
 {
     window.requestAnimationFrame(loop)
+    evolveSmoke()
+    const delta = clock.getDelta();
+    const hasControlsUpdated = cameraControls.update( delta );
 
-    // Update house
-    house.rotation.y += 0.003
-
-    // Update camera
-    camera.position.x = cursor.x * 3
-    camera.position.y = - cursor.y * 3
-    camera.lookAt(new THREE.Vector3())
+    //console.log(camera.position)
 
     // Renderer
     renderer.render(scene, camera)
 }
 loop()
-
-// // Hot reload
-// if(module.hot)
-// {
-//     module.hot.accept()
-
-//     module.hot.dispose(() =>
-//     {
-//         document.body.removeChild($image)
-//     })
-// }
