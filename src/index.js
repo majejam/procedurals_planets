@@ -1,8 +1,13 @@
 import './css/style.styl'
 import CameraControls from 'camera-controls';
 import * as THREE from 'three'
-
+import skyboxTexture from './img/texture/skybox/skybox.png' 
+import starText from './img/texture/particle64.png' 
+const textureLoader = new THREE.TextureLoader()
 CameraControls.install( { THREE: THREE } );
+let quickNormalMap = require("quick-normal-map")
+let ndarray = require("ndarray")
+
 
 /**
  * Scene
@@ -32,18 +37,19 @@ window.addEventListener('mousemove', (_event) =>
 /**
  * Camera
  */
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 1, 8000)
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 1, 10000)
 camera.position.z = 30
 scene.add(camera)
 
 
 /**
  * Universe
- */
+
+
 let galaxyArray = new Array()
 const universe = new THREE.Object3D()
 const ul = 5000
-const nb_of_clusters = 20
+const nb_of_clusters = 50
 // Stars 
 for(let i = 0; i < nb_of_clusters; i++){
     let cluster_color = parseInt('0x' + (Math.random().toString(16) + "000000").substring(2,8))
@@ -61,10 +67,11 @@ for(let i = 0; i < nb_of_clusters; i++){
     galaxyArray.push(points)
     let gvx,gvy,gvz
     const sr = 0.2 + Math.random() * 0.4
-    const cluster_size = 100
+    const cluster_size = 50 + Math.random()*150
     //linear cluster generation
     for(let j = 0; j < 200; j++)
     {
+        var particleGeometry = new THREE.Geometry();
         if(true){
             gvx = Math.random() * 1.2
             gvy = Math.random() * 1.2
@@ -73,64 +80,61 @@ for(let i = 0; i < nb_of_clusters; i++){
         const tx = galaxyArray[i].cx + ((-(cluster_size * gvx)/2) + Math.random() * (cluster_size * gvx))
         const ty = galaxyArray[i].cy + ((-(cluster_size * gvy)/2) + Math.random() * (cluster_size * gvy))/2
         const tz = galaxyArray[i].cz + ((-(cluster_size * gvz)/2) + Math.random() * (cluster_size * gvz))
-        //const starLight = new THREE.PointLight(0xFF69B4)
-        const star = new THREE.Mesh(
-            new THREE.SphereBufferGeometry(sr),
-            new THREE.MeshStandardMaterial({ color: cluster_color, metalness: 0.3, roughness: 0.8 })
-    )
+        const vertice = new THREE.Vector3(1, 1, 1);
+        particleGeometry.vertices.push(vertice);
 
-    // Set position
-    //starLight.position.set(tx, ty, tz)
-    star.position.set(tx, ty, tz)
+        let materialP = new THREE.PointsMaterial({
+                    map: textureLoader.load(starText), 
+                    color: cluster_color,
+                    transparent: true,
+                    size: 10,
+                    sizeAttenuation: false
+                    })
+        
+        const star = new THREE.Points(
+            particleGeometry,
+            materialP
+         );
 
-    // Shadows
-    //star.castShadow = true
-    //star.receiveShadow = true
+        // Set position
+        //starLight.position.set(tx, ty, tz)
+        star.position.set(tx, ty, tz)
 
-    // Add Elements
-    //universe.add(starLight)
-    universe.add(star)
+        // Shadows
+        //star.castShadow = true
+        //star.receiveShadow = true
+
+        // Add Elements
+        //universe.add(starLight)
+        universe.add(star)
     }
 }
 
 scene.add(universe)
-/** 
-*smoke effect
-**/
-
-let geometryS = new THREE.CubeGeometry( 200, 200, 200 );
-let materialS = new THREE.MeshLambertMaterial( { color: 0xaa6666, wireframe: false } );
-let mesh = new THREE.Mesh( geometryS, materialS );
-//scene.add( mesh );
-let cubeSineDriver = 0;
-
-
-THREE.ImageUtils.crossOrigin = ''; //Need this to pull in crossdomain images from AWS
-
-
-let smokeTexture = THREE.ImageUtils.loadTexture('https://s3-us-west-2.amazonaws.com/s.cdpn.io/95637/Smoke-Element.png');
-let smokeMaterial = new THREE.MeshLambertMaterial({color: 0x00dddd, map: smokeTexture, transparent: true});
-let smokeGeo = new THREE.PlaneGeometry(300,300);
-let smokeParticles = [];
-
-
-for (let p = 0; p < 150; p++) {
-    var particle = new THREE.Mesh(smokeGeo,smokeMaterial);
-    particle.position.set(Math.random()*500-250,Math.random()*500-250,Math.random()*1000-100);
-    particle.rotation.z = Math.random() * 360;
-    scene.add(particle);
-    smokeParticles.push(particle);
-}
- 
- 
-function evolveSmoke() {
-    var sp = smokeParticles.length;
-    while(sp--) {
-        smokeParticles[sp].rotation.z += (0.002);
-    }
-}
+ */
 /**
-* Lights
+        this.belt = {}
+        this.belt.geometry = new THREE.Geometry()
+        for ( let i = 0; i < 20000; i ++ ) {
+            const vertice = new THREE.Vector3();
+            const angle = Math.random() * Math.PI * 2
+            const distance = 1.5 + Math.random() * 1.5
+
+            vertice.x = Math.cos(angle) * distance
+            vertice.y = (Math.random() - 0.5) *0.2
+            vertice.z = Math.sin(angle) * distance
+        
+            this.belt.geometry.vertices.push( vertice );
+        
+        }
+        this.belt.material = new THREE.PointsMaterial( { 
+            map: this.textureLoader.load(rockSource), 
+            transparent: true,
+            size: 2,
+            sizeAttenuation: false
+        } );
+        this.belt.point = new THREE.Points( this.belt.geometry, this.belt.material );
+        this.container.add(this.belt.point)
 **/
 
 
@@ -186,8 +190,7 @@ let material = new THREE.ShaderMaterial( {
 Do clusters of stars (select a point, build around it), complexité log(n). 
 
 */
-import skyboxTexture from './img/texture/skybox/skybox.png' 
-const textureLoader = new THREE.TextureLoader()
+
 let geometry = new THREE.BoxGeometry(1, 1, 1, 32, 32, 32);
 for (var i in geometry.vertices) {
     var vertex = geometry.vertices[i];
@@ -229,12 +232,9 @@ cameraControls.truckSpeed = 0
 let nb_gala = 0
 window.addEventListener('contextmenu', () =>
 {
-    if(nb_gala == nb_of_clusters - 1){
-        nb_gala = 0
-    } 
-    nb_gala++
+
     //cameraControls.setPosition( galaxyArray[rand].cx,galaxyArray[rand].cy,galaxyArray[rand].cz, true)
-    cameraControls.setTarget(galaxyArray[nb_gala].cx,galaxyArray[nb_gala].cy,galaxyArray[nb_gala].cz, true)
+    cameraControls.setTarget(1,1,1, true)
     cameraControls.dollyTo( 50, true )
 })
 /**
@@ -252,15 +252,516 @@ window.addEventListener('resize', () =>
 
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
-})
+});
+var Terrain = function( options ) {
 
+	var self = this;
+
+
+	this.size = 9;
+
+	this.noise = 0.1;
+
+	this.deviation = 5;
+
+	this.roughness = 13;
+
+
+	for ( var i in options ) this[ i ] = options[ i ];
+
+
+	if ( typeof this.map === 'undefined' ) {
+
+		this.map = this.createMap();
+
+	}
+
+
+	this.generate();
+
+
+	this.map.EDGE_TOP = 0x0;
+
+	this.map.EDGE_RIGHT = 0x1;
+
+	this.map.EDGE_BOTTOM = 0x2;
+
+	this.map.EDGE_LEFT = 0x3;
+
+
+	this.map.FLIP_NONE = 0x0;
+
+	this.map.FLIP_VERT = 0x1;
+
+	this.map.FLIP_HORZ = 0x2;
+
+
+	this.map.size = this.size;
+
+	this.map.eachNode = this.eachNode;
+
+	this.map.getEdge = function( edge ) {
+
+		return self.getEdge( edge );
+
+	}
+
+
+	return this.map;
+
+}
+
+
+Terrain.prototype = {
+
+
+	getEdge: function( edge, flip ) {
+
+		var node, x, y,
+
+			chunk = this.createMap();
+
+
+		for ( x = 0; x < this.size; ++x ) {
+
+			for ( y = 0; y < this.size; ++y ) {
+
+				node = this.map[ x ] && this.map[ x ][ y ];
+
+
+				if ( edge === this.map.EDGE_TOP && y === 0 ) {
+
+					chunk[ x ][ y ] = this.map[ x ][ y ];
+
+				} else if ( edge === this.map.EDGE_BOTTOM && y === this.size - 1 ) {
+
+					chunk[ x ][ y ] = this.map[ x ][ y ];
+
+				} else if ( edge === this.map.EDGE_LEFT && x === 0 ) {
+
+					chunk[ x ][ y ] = this.map[ x ][ y ];
+
+				} else if ( edge === this.map.EDGE_RIGHT && x === this.size - 1 ) {
+
+					chunk[ x ][ y ] = this.map[ x ][ y ];
+
+				}
+
+			}
+
+		}
+
+
+		if ( flip === this.FLIP_VERT ) {
+
+			for ( x = 0; x < this.size; ++x ) {
+
+				chunk[ x ].reverse();
+
+			}
+
+			chunk.reverse();
+
+		}
+
+
+		if ( flip === this.FLIP_HORZ ) {
+
+			chunk.reverse();
+
+		}
+
+
+		return chunk;
+
+	},
+
+
+	createMap: function() {
+
+		var map = [];
+
+		var w = this.size;
+
+		while ( w-- ) {
+
+			var h = this.size;
+
+			if ( typeof map[ w ] == 'undefined' )
+
+				map[ w ] = [];
+
+			while ( h-- ) {
+
+				map[ w ][ h ] = null;
+
+			}
+
+		}
+
+		return map;
+
+	},
+
+
+	// Iterates through each node and 
+
+	// executes the given function (fn) 
+
+	// with three arguments:
+
+	//  - value of the node (from 0 to 1)
+
+	//  - x index
+
+	//  - y index
+
+	eachNode: function( fn ) {
+
+		for ( var x = 0; x < this.size; ++x ) {
+
+			for ( var y = 0; y < this.size; ++y ) {
+
+				fn( this[ x ][ y ], x, y );
+
+			}
+
+		}
+
+	},
+
+
+	// Generates the terrain
+
+	generate: function() {
+
+		this.set( 0, 0, Math.random() * 1 );
+
+		this.set( this.size - 1, 0, Math.random() * 1 );
+
+		this.set( this.size - 1, this.size - 1, Math.random() * 1 );
+
+		this.set( 0, this.size - 1, Math.random() * 1 );
+
+
+		this.set( Math.floor( this.size / 2 ), Math.floor( this.size / 2 ), Math.random() * 1 );
+
+
+		this.subdivide( 0, 0, this.size - 1, 1 );
+
+	},
+
+
+	// Sets the value of a node
+
+	set: function( x, y, value ) {
+
+		if ( this.map[ x ][ y ] == null ) {
+
+			this.map[ x ][ y ] = value;
+
+		}
+
+	},
+
+
+	// Gets the value of a node
+
+	get: function( x, y ) {
+
+		return this.map[ x ][ y ];
+
+	},
+
+
+	// Returns the average value of given numbers (arguments)
+
+	average: function() {
+
+		var sum = 0;
+
+		for ( var i = 0, l = arguments.length; i < l; ++i ) {
+
+			sum += arguments[ i ];
+
+		}
+
+		return ( sum / arguments.length ) // + ( Math.random() - 0.5 ) / deviation * 15 ;
+
+	},
+
+
+	// Fits the given number between 0 - 1 range.
+
+	constrain: function( num ) {
+
+		return num < 0 ? 0 : num > 1 ? 1 : num;
+
+	},
+
+
+
+	// Returns a displacement value.
+
+	displace: function( num, roughness ) {
+
+		var max = num / ( this.size + this.size ) * roughness;
+
+		return ( Math.random() - 0.5 ) * max;
+
+	},
+
+
+	// Subdivides the terrain recursively.
+
+	subdivide: function( x, y, s, level ) {
+
+		if ( s > 1 ) {
+
+			var half_size = Math.floor( s / 2 );
+
+
+			var midpoint_x = x + half_size,
+
+				midpoint_y = y + half_size;
+
+
+			var roughness = this.noise / level;
+
+
+			// Diamond stage
+
+			var tp_lf = this.get( x, y ),
+
+				tp_rg = this.get( x + s, y ),
+
+				bt_lf = this.get( x, y + s ),
+
+				bt_rg = this.get( x + s, y + s );
+
+
+			let midpoint_value = this.average( tp_lf, tp_rg, bt_rg, bt_lf );
+
+			midpoint_value += this.displace( half_size + half_size, roughness );
+
+			midpoint_value = this.constrain( midpoint_value )
+
+
+			this.set( midpoint_x, midpoint_y, midpoint_value );
+
+
+			// Square stage
+
+			var tp_x = x + half_size,
+
+				tp_y = y;
+
+
+			var rg_x = x + s,
+
+				rg_y = y + half_size;
+
+
+			var bt_x = x + half_size,
+
+				bt_y = y + s;
+
+
+			var lf_x = x,
+
+				lf_y = y + half_size;
+
+
+			var t_val = this.average( tp_lf, tp_rg ) + this.displace( half_size + half_size, roughness ),
+
+				r_val = this.average( tp_rg, bt_rg ) + this.displace( half_size + half_size, roughness ),
+
+				b_val = this.average( bt_lf, bt_rg ) + this.displace( half_size + half_size, roughness ),
+
+				l_val = this.average( tp_lf, bt_lf ) + this.displace( half_size + half_size, roughness );
+
+
+			t_val = this.constrain( t_val );
+
+			r_val = this.constrain( r_val );
+
+			b_val = this.constrain( b_val );
+
+			l_val = this.constrain( l_val );
+
+
+			this.set( tp_x, tp_y, t_val );
+
+			this.set( rg_x, rg_y, r_val );
+
+			this.set( bt_x, bt_y, b_val );
+
+			this.set( lf_x, lf_y, l_val );
+
+
+			this.subdivide( x, y, half_size, level + 1 );
+
+			this.subdivide( x, midpoint_y, half_size, level + 1 );
+
+			this.subdivide( midpoint_x, midpoint_y, half_size, level + 1 );
+
+			this.subdivide( midpoint_x, y, half_size, level + 1 );
+
+		}
+
+	}
+
+}
+
+
+function generate( map_size, noise, pixel_size ) {
+
+    var div    = document.createElement('div'),
+
+
+        canvas = document.createElement('canvas'),
+        ctx    = canvas.getContext('2d');
+    
+
+    div.appendChild( canvas );
+
+    document.body.appendChild(div);
+
+
+    var terrain = new Terrain({
+
+
+        size : map_size + 1,
+
+
+        noise  : noise
+
+
+    });
+
+
+
+	let type = Math.ceil(Math.random()*3)
+	type = 1
+    //console.log(terrain)
+    canvas.width  = terrain.size * pixel_size;
+    canvas.height = terrain.size * pixel_size;
+	console.log(type)
+	let c1 = Math.floor(Math.random()*255)
+	let c2 = Math.floor(Math.random()*255)
+	let c3 = Math.floor(Math.random()*255)
+    terrain.eachNode(function( value, x, y ){
+
+
+        ctx.beginPath();
+
+
+        var c = Math.floor( value * 255 );
+		// 1 : habitable (earth like) 2 : Mars Like 
+		if(c > 200){	//water
+			if(type == 1){
+				ctx.fillStyle = 'rgb(' + 64 + ', ' + 164 + ',' + 223 + ')';
+			}
+			if(type == 2){
+				ctx.fillStyle = 'rgb(' + 231 + ', ' + 125 + ',' + 17 + ')';
+			}
+			if(type == 3){
+				ctx.fillStyle = 'rgb(' + c1 + ', ' + c2 + ',' + c3 + ')';
+			}
+			
+		}
+		else{
+			if(type == 1){
+				ctx.fillStyle = 'rgb(' + 124 + ', ' + 252 + ',' + 0 + ')';
+			}
+			if(type == 2){
+				ctx.fillStyle = 'rgb(' + 193 + ', ' + 68 + ',' + 14 + ')';
+			}
+			if(type == 3){
+				ctx.fillStyle = 'rgb(' + c1/2 + ', ' + c2/2 + ',' + c3/2 + ')';
+			}
+			
+		}
+        
+        ctx.rect( x * pixel_size, y * pixel_size, pixel_size, pixel_size );
+
+
+        ctx.fill();
+
+
+		ctx.closePath();
+		
+
+	});
+	//ctx.fillStyle = 'rgba(255,255,255,0.9)';
+	//ctx.fillRect(0,0,513,30)
+	//ctx.fillRect(0,490,513,23)
+    return [ctx, canvas]
+}
+
+
+
+
+let img
+
+function init(){
+
+
+   // generate( 8, 2, 32 );
+
+
+ 
+
+	let context = generate(1024, 100, 2 );
+	let data = context[0].getImageData(0,0,512,512);
+	
+	
+	let ar = ndarray(data.data,[2,2])
+    //console.log(data.data[0],data.data[1],data.data[2],data.data[3])
+	let normal = quickNormalMap(ar)
+	let ar2 = ndarray(normal.data, [1,1])
+	console.log(normal)
+	img = context[1].toDataURL("image/jpg")/*
+	console.log(data.data[0],data.data[1],data.data[2])
+
+	for(var i = 0; i < data.data.length; i += 4) {
+	  // red
+	  data.data[i] = 255 - data.data[i];
+	  // green
+	  data.data[i + 1] = 255 - data.data[i + 1];
+	  // blue
+	  data.data[i + 2] = 255 - data.data[i + 2];
+	}
+	console.log(data.data[0],data.data[1],data.data[2])
+	// overwrite original image
+	*/
+
+
+}
+
+
+init()
+let mapmap = textureLoader.load(img)
+mapmap.anisotropy = 0;
+mapmap.magFilter = THREE.NearestFilter;
+mapmap.minFilter = THREE.NearestFilter;
+let globe = {}
+        globe.geometry = new THREE.SphereBufferGeometry(1, 45, 45)
+        globe.material = new THREE.MeshStandardMaterial({
+			map: mapmap,
+			
+        })
+		globe.mesh = new THREE.Mesh(globe.geometry, globe.material)
+		globe.mesh.position.x = 0;
+		globe.mesh.position.y = 0;
+		globe.mesh.position.z = 0;
+        scene.add(globe.mesh)
 /**
  * Loop
  */
 const loop = () =>
 {
     window.requestAnimationFrame(loop)
-    evolveSmoke()
     const delta = clock.getDelta();
     const hasControlsUpdated = cameraControls.update( delta );
 

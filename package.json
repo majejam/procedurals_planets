@@ -4,7 +4,10 @@
   "description": "For my webgl homework",
   "main": "index.js",
   "dependencies": {
-    "camera-controls": "^1.10.6"
+    "camera-controls": "^1.10.6",
+    "ndarray": "^1.0.18",
+    "quick-normal-map": "0.0.0",
+    "zeros": "^1.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.2.2",
