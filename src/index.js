@@ -139,7 +139,7 @@ scene.add(universe)
 
 
 const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.3)
-scene.add(ambientLight)
+//scene.add(ambientLight)
 
 const sunLight = new THREE.DirectionalLight(0xFFFFFF, 1)
 sunLight.position.x = 1
@@ -229,14 +229,7 @@ cameraControls.maxDistance = 2000
 cameraControls.truckSpeed = 0
 
 
-let nb_gala = 0
-window.addEventListener('contextmenu', () =>
-{
 
-    //cameraControls.setPosition( galaxyArray[rand].cx,galaxyArray[rand].cy,galaxyArray[rand].cz, true)
-    cameraControls.setTarget(1,1,1, true)
-    cameraControls.dollyTo( 50, true )
-})
 /**
  * Resize
  */
@@ -625,9 +618,16 @@ function generate( map_size, noise, pixel_size ) {
 
     div.appendChild( canvas );
 
-    document.body.appendChild(div);
-
-
+	document.body.appendChild(div);
+	
+	console.log('Generatin first planet : Using Diamond square algorithm..')
+	console.log('___________________')
+	console.log('')
+	console.log('The parameters are the following: ')
+	console.log('-- Map size: ', map_size)
+	console.log('-- Noise: ', noise)
+	console.log('-- Pixel size: ', pixel_size)
+	console.log('___________________')
     var terrain = new Terrain({
 
 
@@ -641,12 +641,17 @@ function generate( map_size, noise, pixel_size ) {
 
 
 
-	let type = Math.ceil(Math.random()*3)
-	type = 1
-    //console.log(terrain)
-    canvas.width  = terrain.size * pixel_size;
+	let type = Math.ceil(Math.random()*4)
+	console.log('___________________')
+	console.log('')
+	console.log('Determining colors with following parameter: ', type)
+	console.log('-- 1 is earth like')
+	console.log('-- 2 is mars like')
+	console.log('-- 3 is random color')
+	console.log('-- 4 is toned down random color')
+	console.log('___________________')
+	canvas.width  = terrain.size * pixel_size;
     canvas.height = terrain.size * pixel_size;
-	console.log(type)
 	let c1 = Math.floor(Math.random()*255)
 	let c2 = Math.floor(Math.random()*255)
 	let c3 = Math.floor(Math.random()*255)
@@ -658,14 +663,14 @@ function generate( map_size, noise, pixel_size ) {
 
         var c = Math.floor( value * 255 );
 		// 1 : habitable (earth like) 2 : Mars Like 
-		if(c > 200){	//water
+		if(c > 170){	//water
 			if(type == 1){
 				ctx.fillStyle = 'rgb(' + 64 + ', ' + 164 + ',' + 223 + ')';
 			}
 			if(type == 2){
 				ctx.fillStyle = 'rgb(' + 231 + ', ' + 125 + ',' + 17 + ')';
 			}
-			if(type == 3){
+			if(type == 3 || type == 4){
 				ctx.fillStyle = 'rgb(' + c1 + ', ' + c2 + ',' + c3 + ')';
 			}
 			
@@ -679,6 +684,9 @@ function generate( map_size, noise, pixel_size ) {
 			}
 			if(type == 3){
 				ctx.fillStyle = 'rgb(' + c1/2 + ', ' + c2/2 + ',' + c3/2 + ')';
+			}
+			if(type == 4){
+				ctx.fillStyle = 'rgb(' + c1/1.2 + ', ' + c2/1.2 + ',' + c3/1.2 + ')';
 			}
 			
 		}
@@ -702,28 +710,28 @@ function generate( map_size, noise, pixel_size ) {
 
 
 
-let img
+let arrayTexture = new Array()
+let globeImg = {}
 
-function init(){
+function init(size, px_size){
 
 
    // generate( 8, 2, 32 );
 
 
  
-
-	let context = generate(1024, 100, 2 );
-	let data = context[0].getImageData(0,0,512,512);
-	
+	let randNoise = 10 + Math.floor(Math.random()*500)
+	let context = generate(size, randNoise, px_size);
+	console.log('Finished generating planet')
+	console.log('Starting generating texture...')
+	let data = context[0].getImageData(0,0,2050,2050);
+	let base_data = context[0].getImageData(0,0,2050,2050);
 	
 	let ar = ndarray(data.data,[2,2])
     //console.log(data.data[0],data.data[1],data.data[2],data.data[3])
 	let normal = quickNormalMap(ar)
 	let ar2 = ndarray(normal.data, [1,1])
-	console.log(normal)
-	img = context[1].toDataURL("image/jpg")/*
-	console.log(data.data[0],data.data[1],data.data[2])
-
+	globeImg.texture = context[1].toDataURL("image/jpg")/*
 	for(var i = 0; i < data.data.length; i += 4) {
 	  // red
 	  data.data[i] = 255 - data.data[i];
@@ -731,31 +739,203 @@ function init(){
 	  data.data[i + 1] = 255 - data.data[i + 1];
 	  // blue
 	  data.data[i + 2] = 255 - data.data[i + 2];
-	}
-	console.log(data.data[0],data.data[1],data.data[2])
+	}*/
+	//Roughness
+	let globalB = 0 
+	let globalC = 0
+	for(var i = 0; i < data.data.length; i += 4) {
+		var brightness = 0.34 * data.data[i] + 0.5 * data.data[i + 1] + 0.16 * data.data[i + 2];
+		// red
+		data.data[i] = brightness;
+		// green
+		data.data[i + 1] = brightness;
+		// blue
+		data.data[i + 2] = brightness;
+	  }
+	context[0].putImageData(data,0,0)
+	globeImg.BW = context[1].toDataURL("image/jpg")
+	//Specular
+	for(var i = 0; i < data.data.length; i += 4) {
+		// red
+		data.data[i] = 255 - data.data[i];
+		// green
+		data.data[i + 1] = 255 - data.data[i + 1];
+		// blue
+		data.data[i + 2] = 255 - data.data[i + 2];
+	  }
+	  globeImg.spec = context[1].toDataURL("image/jpg")
+	  context[0].putImageData(data,0,0)
+	  context[0].fillStyle = 'rgba(255,255,255,0.9)'
+	  context[0].fillRect(0,0,2050,2050)
+	  data = context[0].getImageData(0,0,2050,2050);
+	  for(var i = 0; i < data.data.length; i += 4) {
+		// red
+		data.data[i] = 255 - data.data[i];
+		// green
+		data.data[i + 1] = 255 - data.data[i + 1];
+		// blue
+		data.data[i + 2] = 255 - data.data[i + 2];
+	  }
+	  context[0].putImageData(data,0,0)
+	  globeImg.bump = context[1].toDataURL("image/jpg")
+	  context[0].putImageData(base_data,0,0)
 	// overwrite original image
-	*/
-
+	//arrayTexture.push(globeImg)
+	console.log('Finished generating texture')
+	return globeImg
 
 }
 
+let nb_gala = 0
+let x_pos = 0
+let nb_planets = 6
+let d = 6000
+let spacing = d/nb_planets
+let planetArray = new Array()
+for (let j = 0; j < nb_planets; j++) {
+	console.log('________________')
+	console.log('*******',j,j,j,j,j,j,j,'*********')
+	console.log('________________')
+	arrayTexture.push(init(2048, 1))
+	planetArray.push(createGlobe(-d/2 + j*spacing,0,0,j))
+}
+window.addEventListener('contextmenu', () =>
+{	
+	if(x_pos >= nb_planets)
+		x_pos = 0
+    //cameraControls.setPosition( galaxyArray[rand].cx,galaxyArray[rand].cy,galaxyArray[rand].cz, true)
+    cameraControls.setTarget(planetArray[x_pos].position.x,0,0, true)
+	cameraControls.dollyTo( 50, true )
 
-init()
-let mapmap = textureLoader.load(img)
-mapmap.anisotropy = 0;
-mapmap.magFilter = THREE.NearestFilter;
-mapmap.minFilter = THREE.NearestFilter;
-let globe = {}
-        globe.geometry = new THREE.SphereBufferGeometry(1, 45, 45)
-        globe.material = new THREE.MeshStandardMaterial({
-			map: mapmap,
-			
-        })
-		globe.mesh = new THREE.Mesh(globe.geometry, globe.material)
-		globe.mesh.position.x = 0;
-		globe.mesh.position.y = 0;
-		globe.mesh.position.z = 0;
-        scene.add(globe.mesh)
+	x_pos++
+})
+
+function createGlobe(x,y,z,texture_nm){
+	let container = new THREE.Object3D()
+	let globe_size = 0.2 + Math.random()*8
+	let atmo_size = Math.random()/2
+	let rand_color = '0x' + (Math.random().toString(16) + "000000").substring(2,8)
+	rand_color = parseInt(rand_color)
+	let texture = {}
+	texture.map = textureLoader.load(arrayTexture[texture_nm].texture)
+	texture.rough = textureLoader.load(arrayTexture[texture_nm].BW)
+	texture.spec = textureLoader.load(arrayTexture[texture_nm].spec)
+	texture.bump = textureLoader.load(arrayTexture[texture_nm].bump)
+	texture.map.anisotropy = 0;
+	texture.map.magFilter = THREE.NearestFilter;
+	texture.map.minFilter = THREE.NearestFilter;
+	console.log('___________________')
+	console.log('')
+	console.log('Determining size of planet with parameter: ', globe_size)
+	console.log('___________________')
+	let globe = {}
+			globe.geometry = new THREE.SphereBufferGeometry(globe_size, 45, 45)
+			globe.material = new THREE.MeshStandardMaterial({
+				map: texture.map,
+				bumpMap: texture.bump,
+				roughnessMap: texture.rough,
+				roughness: 0.8,
+				metalness: 0.3,
+				metalnessMap: texture.spec,
+			})
+			globe.mesh = new THREE.Mesh(globe.geometry, globe.material)
+
+			container.add(globe.mesh)
+
+			let atmosphereGeometry = new THREE.SphereBufferGeometry(globe_size + atmo_size, 45, 45)
+			let atmosphereMaterial =  new THREE.MeshStandardMaterial({
+			 side: THREE.DoubleSide,
+			 transparent: true,
+			 color: rand_color
+		 })
+			let atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+			  // Create the planet's Atmospheric glow
+		   let atmosphericGlowGeometry = new THREE.SphereBufferGeometry(globe_size + atmo_size, 45, 45);
+		   let atmosphericGlowMaterial = glowMaterial(0.5, 2, rand_color);
+		   let atmosphericGlow = new THREE.Mesh(atmosphericGlowGeometry, atmosphericGlowMaterial);
+		   let atmoBool = Math.floor(Math.random()*2)
+		   console.log('___________________')
+		   console.log('')
+		   console.log('Determining atmosphere presence with parameter: ', atmoBool)
+		   console.log('-- 0 theres is atmosphere')
+		   console.log('-- 1 theres no atmosphere')
+		   console.log('___________________')
+		   if(atmoBool){
+			container.add(atmosphericGlow)
+			 console.log('___________________')
+			 console.log('')
+			 console.log('Determining size of atmosphere with parameter: ', atmo_size)
+			 console.log('___________________')
+			 console.log('___________________')
+			 console.log('')
+			 console.log('Determining color of atmosphere with parameter: ', rand_color)
+			 console.log('___________________')
+		   }
+		 
+		   container.position.x = x;
+		   container 	.position.y = y;
+		   container.position.z = z;
+		   container.castShadow = true
+		   container.receiveShadow = true
+		   scene.add(container)
+		   return container
+}
+
+
+function glowMaterial(intensity, fade, color) {
+    // Custom glow shader from https://github.com/stemkoski/stemkoski.github.com/tree/master/Three.js
+    let glowMaterial = new THREE.ShaderMaterial({
+      uniforms: { 
+        'c': {
+          type: 'f',
+          value: intensity
+        },
+        'p': { 
+          type: 'f',
+          value: fade
+        },
+        glowColor: { 
+          type: 'c',
+          value: new THREE.Color(color)
+        },
+        viewVector: {
+          type: 'v3',
+          value: camera.position
+        }
+      },
+      vertexShader: `
+        uniform vec3 viewVector;
+        uniform float c;
+        uniform float p;
+        varying float intensity;
+        void main() {
+          vec3 vNormal = normalize( normalMatrix * normal );
+          vec3 vNormel = normalize( normalMatrix * viewVector );
+          intensity = pow( c - dot(vNormal, vNormel), p );
+          gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        }`
+      ,
+      fragmentShader: `
+        uniform vec3 glowColor;
+        varying float intensity;
+        void main() 
+        {
+          vec3 glow = glowColor * intensity;
+          gl_FragColor = vec4( glow, 1.0 );
+        }`
+      ,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      transparent: true
+    });
+    
+    return glowMaterial;
+  }
+
+
+   // Create the planet's Atmosphere
+ 
+
 /**
  * Loop
  */
