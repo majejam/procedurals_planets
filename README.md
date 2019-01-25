@@ -16,7 +16,9 @@ This is my little galaxy, a fully generated solar system made with [three.js](ht
 I'd like to add more to the generation, but I wanted to spent my time playing around with three.js and not only the canvas.
 
 ## Ressources
-I also used [seedrandom.js](https://www.npmjs.com/package/seedrandom) to generate the levels, made by [David Bau](http://davidbau.com).
+I used [seedrandom.js](https://www.npmjs.com/package/seedrandom) to generate the levels, made by [David Bau](http://davidbau.com).
+
+I also used [dat.gui](https://github.com/dataarts/dat.gui) for the graphical user interface.
 
 ## Usage
 You can go see the project on my [website](https://thomaslacroix.fr/speeder).
