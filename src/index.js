@@ -1,6 +1,7 @@
 import './css/style.styl'
-import CameraControls from 'camera-controls';
+import CameraControls from 'camera-controls'
 import * as THREE from 'three'
+import * as dat from 'dat.gui'
 import skyboxTexture from './img/texture/skybox/skybox.png'
 import starText from './img/texture/particle64.png'
 const textureLoader = new THREE.TextureLoader()
@@ -9,7 +10,7 @@ CameraControls.install({
 });
 let quickNormalMap = require("quick-normal-map")
 let ndarray = require("ndarray")
-
+let camera_centered = false
 
 /**
  * Scene
@@ -42,150 +43,51 @@ const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 1, 10
 camera.position.z = 30
 scene.add(camera)
 
-
-/**
- * Universe
-
-
-let galaxyArray = new Array()
-const universe = new THREE.Object3D()
-const ul = 5000
-const nb_of_clusters = 50
-// Stars 
-for(let i = 0; i < nb_of_clusters; i++){
-    let cluster_color = parseInt('0x' + (Math.random().toString(16) + "000000").substring(2,8))
-    const points = {
-        cx : -ul/2 + Math.random() * ul,
-        cy : -ul/2 + Math.random() * ul,
-        cz : -ul/2 + Math.random() * ul
-    }
-    const galaxyPoint = new THREE.Mesh(
-            new THREE.SphereBufferGeometry(20),
-            new THREE.MeshStandardMaterial({ color: cluster_color, metalness: 0.3, roughness: 0.8 })
-    )
-    galaxyPoint.position.set(points.cx, points.cy, points.cz)
-    //universe.add(galaxyPoint)
-    galaxyArray.push(points)
-    let gvx,gvy,gvz
-    const sr = 0.2 + Math.random() * 0.4
-    const cluster_size = 50 + Math.random()*150
-    //linear cluster generation
-    for(let j = 0; j < 200; j++)
-    {
-        var particleGeometry = new THREE.Geometry();
-        if(true){
-            gvx = Math.random() * 1.2
-            gvy = Math.random() * 1.2
-            gvz = Math.random() * 1
-        }
-        const tx = galaxyArray[i].cx + ((-(cluster_size * gvx)/2) + Math.random() * (cluster_size * gvx))
-        const ty = galaxyArray[i].cy + ((-(cluster_size * gvy)/2) + Math.random() * (cluster_size * gvy))/2
-        const tz = galaxyArray[i].cz + ((-(cluster_size * gvz)/2) + Math.random() * (cluster_size * gvz))
-        const vertice = new THREE.Vector3(1, 1, 1);
-        particleGeometry.vertices.push(vertice);
-
-        let materialP = new THREE.PointsMaterial({
-                    map: textureLoader.load(starText), 
-                    color: cluster_color,
-                    transparent: true,
-                    size: 10,
-                    sizeAttenuation: false
-                    })
-        
-        const star = new THREE.Points(
-            particleGeometry,
-            materialP
-         );
-
-        // Set position
-        //starLight.position.set(tx, ty, tz)
-        star.position.set(tx, ty, tz)
-
-        // Shadows
-        //star.castShadow = true
-        //star.receiveShadow = true
-
-        // Add Elements
-        //universe.add(starLight)
-        universe.add(star)
-    }
-}
-
-scene.add(universe)
- */
-/**
-        this.belt = {}
-        this.belt.geometry = new THREE.Geometry()
-        for ( let i = 0; i < 20000; i ++ ) {
-            const vertice = new THREE.Vector3();
-            const angle = Math.random() * Math.PI * 2
-            const distance = 1.5 + Math.random() * 1.5
-
-            vertice.x = Math.cos(angle) * distance
-            vertice.y = (Math.random() - 0.5) *0.2
-            vertice.z = Math.sin(angle) * distance
-        
-            this.belt.geometry.vertices.push( vertice );
-        
-        }
-        this.belt.material = new THREE.PointsMaterial( { 
-            map: this.textureLoader.load(rockSource), 
-            transparent: true,
-            size: 2,
-            sizeAttenuation: false
-        } );
-        this.belt.point = new THREE.Points( this.belt.geometry, this.belt.material );
-        this.container.add(this.belt.point)
-**/
-
-
-const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.3)
-//scene.add(ambientLight)
-
-const sunLight = new THREE.DirectionalLight(0xFFFFFF, 1)
-sunLight.position.x = 1
-sunLight.position.y = 1
-sunLight.position.z = 1
+const galaxyPoint = new THREE.Mesh(
+	new THREE.SphereBufferGeometry(20, 50,50),
+	new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.3, roughness: 0.8, opacity: 0.5 })
+)
+const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.7)
+//galaxyPoint.add(ambientLight)
+scene.add(galaxyPoint)
+const sunLight = new THREE.PointLight( 0xffffff, 1, 0);
+sunLight.position.set( 0, 0, 0 );
 sunLight.castShadow = true
 sunLight.shadow.camera.top = 1.20
 sunLight.shadow.camera.right = 1.20
 sunLight.shadow.camera.bottom = -1.20
 sunLight.shadow.camera.left = -1.20
-scene.add(sunLight)
-/**
- *Sky box 
- **/
+scene.add( sunLight );
 
-/*
-let uniforms = {  
-  texture: { type: 't', value: textureLoader.load(skyboxTexture) }
-};
+const light1 = new THREE.PointLight( 0xffffff, 10, 200);
+light1.position.set( 100, 0, 0 );
+light1.castShadow = false
+scene.add( light1 );
 
-let material = new THREE.ShaderMaterial( {  
-    uniforms: uniforms,
-    vertexShader:
-    `
-        varying vec2 vUV;
+const light2 = new THREE.PointLight( 0xffffff, 10, 200);
+light2.position.set( -100, 0, 0 );
+light2.castShadow = false
+scene.add( light2 );
 
-        void main() {  
-          vUV = uv;
-          vec4 pos = vec4(position, 1.0);
-          gl_Position = projectionMatrix * modelViewMatrix * pos;
-        }
-    `,
-    fragmentShader:
-    `
-        uniform sampler2D texture;  
-        varying vec2 vUV;
+const light3 = new THREE.PointLight( 0xffffff, 10, 200);
+light3.position.set( 0, 0, 100 );
+light3.castShadow = false
+scene.add( light3 );
 
-        void main() {  
-          vec4 sample = texture2D(texture, vUV);
-          gl_FragColor = vec4(sample.xyz, sample.w);
-        }
-    `
-});
-*/
+const light4 = new THREE.PointLight( 0xffffff, 10, 200);
+light4.position.set( 0, 0, -100 );
+light4.castShadow = false
+scene.add( light4 );
 
+const light5= new THREE.PointLight( 0xffffff, 10, 200);
+light5.position.set( 0, 100, 0 );
+light5.castShadow = false
+scene.add( light5 );
+
+const light6 = new THREE.PointLight( 0xffffff, 10, 200);
+light6.position.set( 0, -100, 0 );
+light6.castShadow = false
+scene.add( light6 );
 /*
 
 Do clusters of stars (select a point, build around it), complexité log(n). 
@@ -612,21 +514,22 @@ Terrain.prototype = {
 
 function generate(map_size, noise, pixel_size) {
 
-	let div = document.createElement('div'), canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
+	let  canvas = document.createElement('canvas'), ctx = canvas.getContext('2d');
 
 
-	div.appendChild(canvas);
+	//div.appendChild(canvas);
 
-	document.body.appendChild(div);
-
-	console.log('Generatin first planet : Using Diamond square algorithm..')
-	console.log('___________________')
-	console.log('')
-	console.log('The parameters are the following: ')
-	console.log('-- Map size: ', map_size)
-	console.log('-- Noise: ', noise)
-	console.log('-- Pixel size: ', pixel_size)
-	console.log('___________________')
+	//document.body.appendChild(div);
+	if(text.showLog){
+		console.log('Generatin first planet : Using Diamond square algorithm..')
+		console.log('___________________')
+		console.log('')
+		console.log('The parameters are the following: ')
+		console.log('-- Map size: ', map_size)
+		console.log('-- Noise: ', noise)
+		console.log('-- Pixel size: ', pixel_size)
+		console.log('___________________')
+	}
 	let terrain = new Terrain({
 
 
@@ -641,14 +544,16 @@ function generate(map_size, noise, pixel_size) {
 
 
 	let type = Math.ceil(Math.random() * 4)
-	console.log('___________________')
-	console.log('')
-	console.log('Determining colors with following parameter: ', type)
-	console.log('-- 1 is earth like')
-	console.log('-- 2 is mars like')
-	console.log('-- 3 is random color')
-	console.log('-- 4 is toned down random color')
-	console.log('___________________')
+	if(text.showLog){
+		console.log('___________________')
+		console.log('')
+		console.log('Determining colors with following parameter: ', type)
+		console.log('-- 1 is earth like')
+		console.log('-- 2 is mars like')
+		console.log('-- 3 is random color')
+		console.log('-- 4 is toned down random color')
+		console.log('___________________')
+	}
 	canvas.width = terrain.size * pixel_size;
 	canvas.height = terrain.size * pixel_size;
 	let c1 = Math.floor(Math.random() * 255)
@@ -704,24 +609,57 @@ function generate(map_size, noise, pixel_size) {
 	//ctx.fillRect(0,490,513,23)
 	return [ctx, canvas]
 }
+var FizzyText = function() {
+	this.seed = 'hello';
+	this.orbit_speed = 0.8;
+	this.rotation_speed = 0.4;
+	this.lock = false;
+	this.camera_centered = false;
+	this.nb_planets = 6;
+	this.resolution = 16;
+	this.primary = "#ffae23";
+	this.secondary = "#d7b781";
+	this.showLog = true;
+	this.generate = function() {};
+  };
 
+let text = new FizzyText();
 
+  
+window.onload = function() {
+	var gui = new dat.GUI();
+	gui.add(text, 'seed');
+	var f1 = gui.addFolder('Camera options');
+	f1.add(text, 'lock').onChange(()=>{if(!lock_camera){lock_camera = true}else{lock_camera = false}});
+	f1.add(text, 'camera_centered').onChange(()=>{if(!camera_centered){camera_centered = true}else{camera_centered = false}});
+	var f2 = gui.addFolder('Texture options');
+	f2.add(text, 'resolution', { very_low: 16, low: 64, mid: 256, high: 512, very_high: 1024 } ).setValue(256);
+	f2.addColor(text, 'primary');
+	f2.addColor(text, 'secondary');
+	var f3 = gui.addFolder('Mouvement options');
+	f3.add(text, 'orbit_speed', -5, 5);
+	f3.add(text, 'rotation_speed', -5, 5);
+	var f4 = gui.addFolder('Generation options');
+	f4.add(text, 'nb_planets', 1, 20).step(1).onChange(getEl);
+	f4.add(text, 'showLog').onChange(()=>{if(!text.show_log){text.show_log = true}else{text.show_log = false}});
+	gui.add(text, 'generate').onChange(generateNew);
+  }
+  function getEl(){
+	nb_planets = text.nb_planets
+	x_pos = 0
+  }
 
 
 let arrayTexture = new Array()
 let globeImg = {}
 
 function init(size, px_size) {
-
-
-	// generate( 8, 2, 32 );
-
-
-
 	let randNoise = 10 + Math.floor(Math.random() * 500)
 	let context = generate(size, randNoise, px_size);
-	console.log('Finished generating planet')
-	console.log('Starting generating texture...')
+	if(text.showLog){
+		console.log('Finished generating planet')
+		console.log('Starting generating texture...')
+	}
 	let data = context[0].getImageData(0, 0, 2050, 2050);
 	let base_data = context[0].getImageData(0, 0, 2050, 2050);
 
@@ -780,7 +718,8 @@ function init(size, px_size) {
 	context[0].putImageData(base_data, 0, 0)
 	// overwrite original image
 	//arrayTexture.push(globeImg)
-	console.log('Finished generating texture')
+	if(text.showLog)
+		console.log('Finished generating texture')
 	return globeImg
 
 }
@@ -790,23 +729,38 @@ let x_pos = 0
 let nb_planets = 6
 let d = 6000
 let spacing = d / nb_planets
+let lock_camera = false
 let planetArray = new Array()
-for (let j = 0; j < nb_planets; j++) {
-	console.log('________________')
-	console.log('*******', j, j, j, j, j, j, j, '*********')
-	console.log('________________')
-	arrayTexture.push(init(512, 1))
-	planetArray.push(createGlobe(-d / 2 + j * spacing, 0, 0, j))
+function generateNew(){
+	for (let i = 0; i < planetArray.length; i++) {
+		scene.remove(planetArray[i]);
+		//planetArray[i].geometry.dispose();
+		//planetArray[i].material.dispose();
+	}
+	planetArray.splice(0, planetArray.length)
+	for (let j = 0; j < nb_planets; j++) {
+		if(text.showLog){
+			console.log('________________')
+			console.log('*******', j, j, j, j, j, j, j, '*********')
+			console.log('________________')
+		}
+		arrayTexture.push(init(256, 1))
+		planetArray.push(createGlobe(-d / 2 + j * spacing, 0, Math.random()*3000, j))
+	}
+	for (let i = 0; i < planetArray.length; i++) {
+		scene.add(planetArray[i])
+	}
 }
+generateNew()
 window.addEventListener('contextmenu', () => {
-	if (x_pos >= nb_planets)
+	if (x_pos >= nb_planets-1)
 		x_pos = 0
 	//cameraControls.setPosition( galaxyArray[rand].cx,galaxyArray[rand].cy,galaxyArray[rand].cz, true)
 	cameraControls.setTarget(planetArray[x_pos].position.x, 0, planetArray[x_pos].position.z, false)
-	cameraControls.dollyTo(50, true)
+	cameraControls.dollyTo(10, true)
 
 	x_pos++
-	console.log(planetArray[0].position)
+	//console.log(planetArray[0].position)
 })
 
 function createGlobe(x, y, z, texture_nm) {
@@ -823,10 +777,12 @@ function createGlobe(x, y, z, texture_nm) {
 	texture.map.anisotropy = 0;
 	texture.map.magFilter = THREE.NearestFilter;
 	texture.map.minFilter = THREE.NearestFilter;
-	console.log('___________________')
-	console.log('')
-	console.log('Determining size of planet with parameter: ', globe_size)
-	console.log('___________________')
+	if(text.showLog){
+		console.log('___________________')
+		console.log('')
+		console.log('Determining size of planet with parameter: ', globe_size)
+		console.log('___________________')
+	}
 	let globe = {}
 	globe.geometry = new THREE.SphereBufferGeometry(globe_size, 45, 45)
 	globe.material = new THREE.MeshStandardMaterial({
@@ -853,22 +809,27 @@ function createGlobe(x, y, z, texture_nm) {
 	let atmosphericGlowMaterial = glowMaterial(0.3, 2, rand_color);
 	let atmosphericGlow = new THREE.Mesh(atmosphericGlowGeometry, atmosphericGlowMaterial);
 	let atmoBool = Math.floor(Math.random() * 2)
-	console.log('___________________')
-	console.log('')
-	console.log('Determining atmosphere presence with parameter: ', atmoBool)
-	console.log('-- 0 theres is atmosphere')
-	console.log('-- 1 theres no atmosphere')
-	console.log('___________________')
+	if(text.showLog){
+		console.log('___________________')
+		console.log('')
+		console.log('Determining atmosphere presence with parameter: ', atmoBool)
+		console.log('-- 0 theres is atmosphere')
+		console.log('-- 1 theres no atmosphere')
+		console.log('___________________')
+	}
+
 	if (atmoBool) {
 		container.add(atmosphericGlow)
-		console.log('___________________')
-		console.log('')
-		console.log('Determining size of atmosphere with parameter: ', atmo_size)
-		console.log('___________________')
-		console.log('___________________')
-		console.log('')
-		console.log('Determining color of atmosphere with parameter: ', rand_color)
-		console.log('___________________')
+		if(text.showLog){
+			console.log('___________________')
+			console.log('')
+			console.log('Determining size of atmosphere with parameter: ', atmo_size)
+			console.log('___________________')
+			console.log('___________________')
+			console.log('')
+			console.log('Determining color of atmosphere with parameter: ', rand_color)
+			console.log('___________________')
+		}
 	}
 
 	container.position.x = x;
@@ -876,7 +837,6 @@ function createGlobe(x, y, z, texture_nm) {
 	container.position.z = z;
 	container.castShadow = true
 	container.receiveShadow = true
-	//scene.add(container)
 	return container
 }
 
@@ -930,37 +890,33 @@ function glowMaterial(intensity, fade, color) {
 }
 
 
-// Create the planet's Atmosphere
-let containerSolarSystem = new THREE.Object3D()
-containerSolarSystem.position.x = 0;
-containerSolarSystem.position.y = 0;
-containerSolarSystem.position.z = 0;
-for (let i = 0; i < planetArray.length; i++) {
-	containerSolarSystem.add(planetArray[i])
-}
-scene.add(containerSolarSystem)
-
 /**
  * Loop
  */
 let angle = 0
+console.log(planetArray[0])
 const loop = () => {
 	window.requestAnimationFrame(loop)
 	const delta = clock.getDelta();
 	const hasControlsUpdated = cameraControls.update(delta);
 
 	//console.log(camera.position)
-	for (let i = 0; i < planetArray.length; i++) {
+	for (let i = 1; i < planetArray.length; i++) {
 		planetArray[i].rotation.y += planetArray[i].scale.x / 1000
-		planetArray[i].position.x = Math.cos(angle/i) * 100 * i
-		planetArray[i].position.z = Math.sin(angle/i) * 100 * i
+		planetArray[i].position.x = Math.cos(angle/i) * 500 * i
+		planetArray[i].position.z = Math.sin(angle/i) * 500 * i
 	}
 	//containerSolarSystem.rotation.y += 0.0001
-	 angle += 0.007
+	 angle += 0.0007	
 	 
-	// cameraControls.setPosition( planetArray[0].position.x,0,planetArray[0].position.z, false)
-	//cameraControls.setTarget(planetArray[0].position.x, 0, planetArray[0].position.z, false)
-	//cameraControls.dollyTo(50, false)
+	//cameraControls.setPosition( planetArray[x_pos].position.x,0,planetArray[x_pos].position.z, false)
+	if(!camera_centered)
+		cameraControls.setTarget(planetArray[x_pos].position.x, 0, planetArray[x_pos].position.z, true)
+	else
+		cameraControls.setTarget(0, 0, 0, true)
+	if(lock_camera)
+		cameraControls.dollyTo(30, true)
+
 	// Renderer
 	renderer.render(scene, camera)
 }

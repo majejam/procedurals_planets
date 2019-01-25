@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "camera-controls": "^1.10.6",
+    "dat.gui": "^0.7.5",
     "ndarray": "^1.0.18",
     "quick-normal-map": "0.0.0",
     "zeros": "^1.0.0"
