@@ -39,7 +39,7 @@ window.addEventListener('mousemove', (_event) => {
 /**
  * Camera
  */
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 1, 10000)
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 1, 100000)
 camera.position.z = 30
 scene.add(camera)
 
@@ -97,7 +97,7 @@ Do clusters of stars (select a point, build around it), complexité log(n).
 let geometry = new THREE.BoxGeometry(1, 1, 1, 32, 32, 32);
 for (let i in geometry.vertices) {
 	let vertex = geometry.vertices[i];
-	vertex.normalize().multiplyScalar(4000);
+	vertex.normalize().multiplyScalar(50000);
 }
 let materialArray = [];
 for (let i = 0; i < 6; i++) {
@@ -611,15 +611,15 @@ function generate(map_size, noise, pixel_size) {
 }
 var FizzyText = function() {
 	this.seed = 'hello';
-	this.orbit_speed = 0.8;
-	this.rotation_speed = 0.4;
+	this.orbit_speed =  0.0004;
+	this.rotation_speed = 0.002;
 	this.lock = false;
 	this.camera_centered = false;
 	this.nb_planets = 6;
-	this.resolution = 16;
+	this.resolution = 256;
 	this.primary = "#ffae23";
 	this.secondary = "#d7b781";
-	this.showLog = true;
+	this.showLog = false;
 	this.generate = function() {};
   };
 
@@ -633,12 +633,12 @@ window.onload = function() {
 	f1.add(text, 'lock').onChange(()=>{if(!lock_camera){lock_camera = true}else{lock_camera = false}});
 	f1.add(text, 'camera_centered').onChange(()=>{if(!camera_centered){camera_centered = true}else{camera_centered = false}});
 	var f2 = gui.addFolder('Texture options');
-	f2.add(text, 'resolution', { very_low: 16, low: 64, mid: 256, high: 512, very_high: 1024 } ).setValue(256);
+	f2.add(text, 'resolution', { very_low: 17, low: 64, mid: 256, high: 512, very_high: 1024 } ).setValue(256);
 	f2.addColor(text, 'primary');
 	f2.addColor(text, 'secondary');
 	var f3 = gui.addFolder('Mouvement options');
-	f3.add(text, 'orbit_speed', -5, 5);
-	f3.add(text, 'rotation_speed', -5, 5);
+	f3.add(text, 'orbit_speed', -0.01, 0.01);
+	f3.add(text, 'rotation_speed', -0.1, 0.1);
 	var f4 = gui.addFolder('Generation options');
 	f4.add(text, 'nb_planets', 1, 20).step(1).onChange(getEl);
 	f4.add(text, 'showLog').onChange(()=>{if(!text.show_log){text.show_log = true}else{text.show_log = false}});
@@ -744,7 +744,7 @@ function generateNew(){
 			console.log('*******', j, j, j, j, j, j, j, '*********')
 			console.log('________________')
 		}
-		arrayTexture.push(init(256, 1))
+		arrayTexture.push(init(parseInt(text.resolution), 1))
 		planetArray.push(createGlobe(-d / 2 + j * spacing, 0, Math.random()*3000, j))
 	}
 	for (let i = 0; i < planetArray.length; i++) {
@@ -837,6 +837,7 @@ function createGlobe(x, y, z, texture_nm) {
 	container.position.z = z;
 	container.castShadow = true
 	container.receiveShadow = true
+	container.angle = Math.random()*360
 	return container
 }
 
@@ -902,12 +903,13 @@ const loop = () => {
 
 	//console.log(camera.position)
 	for (let i = 1; i < planetArray.length; i++) {
-		planetArray[i].rotation.y += planetArray[i].scale.x / 1000
-		planetArray[i].position.x = Math.cos(angle/i) * 500 * i
-		planetArray[i].position.z = Math.sin(angle/i) * 500 * i
+		planetArray[i].rotation.y += text.rotation_speed
+		planetArray[i].position.x = Math.cos(planetArray[i].angle/i) * 500 * i
+		planetArray[i].position.z = Math.sin(planetArray[i].angle/i) * 500 * i
+		planetArray[i].angle += text.orbit_speed
 	}
 	//containerSolarSystem.rotation.y += 0.0001
-	 angle += 0.0007	
+	 	
 	 
 	//cameraControls.setPosition( planetArray[x_pos].position.x,0,planetArray[x_pos].position.z, false)
 	if(!camera_centered)

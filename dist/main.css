@@ -5,11 +5,24 @@
 html,
 body,
 canvas {
-  position: fixed;
+  position: relative;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  color: #000;
+}
+.floating-ico {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background-image: url(images/f0d5c259f4755d2a90d7b2b585154ac9.png);
+  background-repeat: no-repeat;
+  background-size: cover;
+  width: 50px;
+  height: 50px;
+  z-index: 100;
 }
 
 
