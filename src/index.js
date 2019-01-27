@@ -3,6 +3,7 @@ import CameraControls from 'camera-controls'
 import * as THREE from 'three'
 import * as dat from 'dat.gui'
 import skybox_texture from './img/texture/skybox/skybox.png'
+import sun_texture from './img/texture/sun.jpg'
 let seedrandom = require('seedrandom')
 
 const textureLoader = new THREE.TextureLoader()
@@ -20,7 +21,8 @@ let d = 6000
 let spacing = d / nb_planets
 let lock_camera = false
 let planet_array = new Array()
-
+let sun_bright = 3
+let is_generated = false
 /**
  * Scene
  */
@@ -58,7 +60,8 @@ const galaxyPoint = new THREE.Mesh(
 		color: 0xffffff,
 		metalness: 0.3,
 		roughness: 0.8,
-		opacity: 0.5
+		opacity: 0.5,
+		map: textureLoader.load(sun_texture) 
 	})
 )
 scene.add(galaxyPoint)
@@ -71,32 +74,32 @@ sunLight.shadow.camera.bottom = -1.20
 sunLight.shadow.camera.left = -1.20
 scene.add(sunLight) 
 
-const light1 = new THREE.PointLight(0xffffff, 10, 200) 
+const light1 = new THREE.PointLight(0xffffff, sun_bright, 200) 
 light1.position.set(100, 0, 0) 
 light1.castShadow = false
 scene.add(light1) 
 
-const light2 = new THREE.PointLight(0xffffff, 10, 200) 
+const light2 = new THREE.PointLight(0xffffff, sun_bright, 200) 
 light2.position.set(-100, 0, 0) 
 light2.castShadow = false
 scene.add(light2) 
 
-const light3 = new THREE.PointLight(0xffffff, 10, 200) 
+const light3 = new THREE.PointLight(0xffffff, sun_bright, 200) 
 light3.position.set(0, 0, 100) 
 light3.castShadow = false
 scene.add(light3) 
 
-const light4 = new THREE.PointLight(0xffffff, 10, 200) 
+const light4 = new THREE.PointLight(0xffffff, sun_bright, 200) 
 light4.position.set(0, 0, -100) 
 light4.castShadow = false
 scene.add(light4) 
 
-const light5 = new THREE.PointLight(0xffffff, 10, 200) 
+const light5 = new THREE.PointLight(0xffffff, sun_bright, 200) 
 light5.position.set(0, 100, 0) 
 light5.castShadow = false
 scene.add(light5) 
 
-const light6 = new THREE.PointLight(0xffffff, 10, 200) 
+const light6 = new THREE.PointLight(0xffffff, sun_bright, 200) 
 light6.position.set(0, -100, 0) 
 light6.castShadow = false
 scene.add(light6) 
@@ -157,6 +160,10 @@ window.addEventListener('resize', () => {
 	// Update renderer
 	renderer.setSize(sizes.width, sizes.height)
 }) 
+
+cameraControls.dollyTo(200, true)
+
+
 let Terrain = function (options) {
 
 	let self = this 
@@ -609,7 +616,9 @@ var MyVar = function () {
 	this.noise_interval = 500 
 	this.show_log = false 
 	this.atmosphere_max_height = 0.5 
-	this.controls = 'right click to change planet'
+	this.min_spacing = 100
+	this.max_spacing_interval = 800
+	this.switch_planet = function () {} 
 	this.generate = function () {} 
 } 
 let text = new MyVar() 
@@ -643,18 +652,18 @@ window.onload = function () {
 	f3.add(text, 'pause_orbit')
 	f3.add(text, 'pause_rotation')
 	var f4 = gui.addFolder('Generation options') 
-	f4.add(text, 'nb_planets', 1, 20).step(1).onChange(getEl) 
+	f4.add(text, 'nb_planets', 1, 20).step(1)
 	f4.add(text, 'atmosphere_max_height', 0, 1).step(0.1)
+	f4.add(text,'min_spacing', 10, 1000)
+	f4.add(text,'max_spacing_interval', 10, 3000)
 	f4.add(text, 'show_log')
 	f4.add(text, 'random_generation')
 	var f5 = gui.addFolder('controls') 
-	f5.add(text, 'controls')
+	f5.add(text, 'switch_planet').onChange(switchPlanete)
 	gui.add(text, 'generate').onChange(generateNew) 
 }
 
-function getEl() {
-	x_pos = 0
-}
+
 
 
 function init(size, px_size) {
@@ -715,7 +724,9 @@ function init(size, px_size) {
 }
 
 function generateNew() {
+	is_generated = true
 	nb_planets = text.nb_planets
+	x_pos = 0
 	if(text.random_generation){
 		text.seed = Math.random().toString(36).substring(7);
 	}
@@ -743,17 +754,19 @@ function generateNew() {
 		scene.add(planet_array[i])
 	}
 }
-generateNew()
+//generateNew()
 window.addEventListener('contextmenu', () => {
+	switchPlanete()
+})
+
+function switchPlanete(){
 	if (x_pos >= nb_planets - 1)
 		x_pos = 0
 
 	cameraControls.setTarget(planet_array[x_pos].position.x, 0, planet_array[x_pos].position.z, false)
 	cameraControls.dollyTo(10, true)
-
 	x_pos++
-
-})
+}
 
 function createGlobe(x, y, z, texture_nm) {
 	let container = new THREE.Object3D()
@@ -830,6 +843,14 @@ function createGlobe(x, y, z, texture_nm) {
 	container.castShadow = true
 	container.receiveShadow = true
 	container.angle = Math.random() * 360
+	container.spacing = text.min_spacing + Math.random() * text.max_spacing_interval
+	if (text.show_log) {
+		console.log('___________________')
+		console.log('')
+		console.log('Determining angle of planet with parameter: ', container.angle)
+		console.log('Determining spacing of planet with parameter: ', container.spacing)
+		console.log('___________________')
+	}
 	return container
 }
 
@@ -891,23 +912,27 @@ const loop = () => {
 	window.requestAnimationFrame(loop)
 	const delta = clock.getDelta() 
 	const hasControlsUpdated = cameraControls.update(delta) 
-
-	for (let i = 1; i < planet_array.length; i++) {
-		if(!text.pause_rotation)
-			planet_array[i].rotation.y += text.rotation_speed
-		if(!text.pause_orbit)
-			planet_array[i].angle += text.orbit_speed
-		planet_array[i].position.x = Math.cos(planet_array[i].angle / i) * 500 * i
-		planet_array[i].position.z = Math.sin(planet_array[i].angle / i) * 500 * i
+	if(is_generated){
+		for (let index = 1; index < planet_array.length; index++) {
+			if(!text.pause_rotation){
+				planet_array[index].rotation.y += text.rotation_speed
+				galaxyPoint.rotation.y += text.rotation_speed/100
+			}
+			if(!text.pause_orbit)
+				planet_array[index].angle += text.orbit_speed
+			planet_array[index].position.x = Math.cos(planet_array[index].angle / index) * (planet_array[index].spacing * index)//spacing here
+			planet_array[index].position.z = Math.sin(planet_array[index].angle / index) * (planet_array[index].spacing * index)
+			//console.log(planet_array[index].position.x, planet_array[index].position.z)
+		}
+	
+		if (!camera_centered)
+			cameraControls.setTarget(planet_array[x_pos].position.x, 0, planet_array[x_pos].position.z, true)
+		else
+			cameraControls.setTarget(0, 0, 0, true)
+		if (text.lock)
+			cameraControls.dollyTo(text.lock_distance, true)
+	
 	}
-
-	if (!camera_centered)
-		cameraControls.setTarget(planet_array[x_pos].position.x, 0, planet_array[x_pos].position.z, true)
-	else
-		cameraControls.setTarget(0, 0, 0, true)
-	if (text.lock)
-		cameraControls.dollyTo(text.lock_distance, true)
-
 	// Renderer
 	renderer.render(scene, camera)
 }
