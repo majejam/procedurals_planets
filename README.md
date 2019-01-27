@@ -1,6 +1,6 @@
-# My little galaxy  
+# Procedural Galaxy 
 Hello,
-This is my little galaxy, a fully generated solar system made with [three.js](https://threejs.org/) & a lot of canvas. It uses the [diamond square algorithm](https://en.wikipedia.org/wiki/Diamond-square_algorithm) to generate the texture.
+This is a fully generated solar system made with [three.js](https://threejs.org/) & a lot of canvas. It uses the [diamond square algorithm](https://en.wikipedia.org/wiki/Diamond-square_algorithm) to generate the texture.
 
 ## Requirements
 * A modern browser (Chrome, Edge, Firefox & Safari)
