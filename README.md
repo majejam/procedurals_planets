@@ -25,6 +25,23 @@ I also used [dat.gui](https://github.com/dataarts/dat.gui) for the graphical use
 ## Usage
 You can go see the project on my [website](https://thomaslacroix.fr/procedural_planets).
 
+## Setup
+Install dependencies
+```sh
+$ npm install
+```
+
+## Development
+Run the local webpack-dev-server with hotreload and autocompile on [http://localhost:8080/](http://localhost:8080/)
+```sh
+$ npm run dev
+```
+## Deployment
+Build the current application
+```sh
+$ npm run build
+```
+
 ## Versioning
 See on [github](https://github.com/majejam/webgl-hw/)
 
