@@ -1,4 +1,4 @@
-# Procedural Galaxy 
+# Procedural Planets 
 Hello,
 This is a fully generated solar system made with [three.js](https://threejs.org/) & a lot of canvas. It uses the [diamond square algorithm](https://en.wikipedia.org/wiki/Diamond-square_algorithm) to generate the texture.
 
